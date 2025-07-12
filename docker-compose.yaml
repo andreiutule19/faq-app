@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  semantic_faq:
+    image: ankane/pgvector
+    container_name: semantic_faq
+    environment:
+      POSTGRES_DB: semantic_faq
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d semantic_faq"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  pgvector_data:
+    driver: local
