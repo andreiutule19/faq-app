@@ -9,7 +9,7 @@ from app.models.schemas import (
 
 from app.services.similarity_service import SimilarityService
 from app.services.openai_service import OpenAIService
-from app.services.embeddings_service import compute_embeddings_for_collection, update_embeddings_incremental
+from app.services.embeddings_service import compute_embeddings_for_collection, update_embeddings_incremental, EmbeddingService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ async def ask_question(
         similar_entry = await similarity_service.find_most_similar(
             request.user_question, db
         )
-        
+ 
         if similar_entry:
             faq_entry, similarity_score = similar_entry
             response = QuestionResponse(
@@ -75,6 +75,19 @@ async def ask_question(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error"
         )
+@router.post("/embeddings")
+async def compute_embeddings(
+    collection: str = "default",
+):
+    try:
+        task = compute_embeddings_for_collection.delay(collection)
+        return {"message": f"Embedding computation started for collection: {collection}", "task_id": task.id}
+    except Exception as e:
+        logger.error(f"Error starting embedding computation: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error starting embedding computation"
+        )
 
 @router.post("/faq-entries", response_model=FAQEntryResponse)
 async def create_faq_entry(
@@ -110,19 +123,6 @@ async def get_faq_entries(
         query = query.filter(FAQEntry.collection == collection)
     return query.offset(skip).limit(limit).all()
 
-@router.post("/embeddings/compute")
-async def compute_embeddings(
-    collection: str = "default",
-):
-    try:
-        task = compute_embeddings_for_collection.delay(collection)
-        return {"message": f"Embedding computation started for collection: {collection}", "task_id": task.id}
-    except Exception as e:
-        logger.error(f"Error starting embedding computation: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error starting embedding computation"
-        )
 
 @router.get("/embeddings/stats", response_model=EmbeddingStats)
 async def get_embedding_stats(
@@ -146,5 +146,39 @@ async def get_embedding_stats(
 
 @router.get("/health")
 async def health_check():
-    """Health check endpoint."""
     return {"status": "healthy"}
+
+@router.get("/rate-limits")
+async def get_rate_limits():
+   
+    try:
+        embedding_service = EmbeddingService()
+        status = embedding_service.get_rate_limit_status()
+        
+        return {
+            "status": "success",
+            "rate_limits": status,
+            "recommendations": status.get('recommendations', []),
+            "overall_health": status.get('overall_health', 'unknown')
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting rate limit status: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+@router.post("/test-openai")
+async def test_openai_connection():
+    try:
+        embedding_service = EmbeddingService()
+        result = await embedding_service.test_connection()
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error testing OpenAI connection: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }

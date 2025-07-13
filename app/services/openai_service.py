@@ -3,7 +3,7 @@ from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage
 from app.core.settings import settings
 import logging
-
+from app.core.celery_app import celery_app
 logger = logging.getLogger(__name__)
 
 class OpenAIService:
@@ -13,14 +13,15 @@ class OpenAIService:
             openai_api_key=settings.openai_api_key,
             temperature=0.7
         )
-    
+        
     async def get_answer(self, user_question: str, context: Optional[str] = None) -> str:
         try:
             system_message = SystemMessage(content="""
             You are a helpful IT support assistant. Answer user questions about account management, 
             password resets, profile settings, and general IT support topics. Answer only if you know the answer, don't guess.
             Be concise and provide actionable steps when possible.
-            If you don't know the answer or the question is not related to IT support, politely redirect the user with "I'm not sure, please contact IT support! ".
+            If you don't know the answer or the question is not related to IT support, politely redirect the user with 
+            "This is not really what I was trained for, therefore I cannot answer. Try again! ".
             """)
             
             human_message = HumanMessage(content=user_question)

@@ -156,21 +156,21 @@ async def generate_and_store_embeddings():
         ).all()
         
         if not entries_without_embeddings:
-            logger.info("📋 All FAQ entries already have embeddings!")
+            logger.info("All FAQ entries already have embeddings!")
             db.close()
             return
         
-        logger.info(f"🔄 Generating embeddings for {len(entries_without_embeddings)} entries...")
+        logger.info(f"Generating embeddings for {len(entries_without_embeddings)} entries...")
         
         embedding_service = EmbeddingService()
         questions = [entry.question for entry in entries_without_embeddings]
         
-        logger.info("🧠 Computing embeddings using OpenAI API...")
+        logger.info("Computing embeddings using OpenAI API...")
         embeddings = await embedding_service.compute_embeddings_batch(questions)
         
         for entry, embedding in zip(entries_without_embeddings, embeddings):
             entry.embedding = embedding
-            logger.info(f"✅ Generated embedding for: {entry.question[:60]}...")
+            logger.info(f"Generated embedding for: {entry.question[:60]}...")
         
 
         db.commit()
@@ -236,7 +236,7 @@ async def main():
         logger.info("6 Verifying setup...")
         await verify_setup()
         
-        logger.info("✨ Database initialization completed successfully!")
+        logger.info("Database initialization completed successfully!")
         
     except Exception as e:
         logger.error(f"Initialization failed: {e}")
