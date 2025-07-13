@@ -1,11 +1,11 @@
 from celery import Celery
-from app.core.config import settings
+from app.core.settings import settings
 
 celery_app = Celery(
     "semantic_faq_assistant",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=["app.services.embedding_service"]
+    include=["app.services.embeddings_service"]
 )
 
 celery_app.conf.update(

@@ -1,26 +1,117 @@
 version: '3.8'
 
 services:
-  semantic_faq:
-    image: ankane/pgvector
-    container_name: semantic_faq
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: semantic_faq_db
     environment:
-      POSTGRES_DB: semantic_faq
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
-      - pgvector_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d semantic_faq"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - faq_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: semantic_faq_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - faq_network
+
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: semantic_faq_api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./app:/app/app 
+      - ./init_db.py:/app/init_db.py  
+    networks:
+      - faq_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 30s
-    restart: unless-stopped
+      retries: 3
+      start_period: 40s
 
+  celery_worker:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: semantic_faq_celery
+    command: celery -A app.core.celery_app worker --loglevel=info --concurrency=2
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./app:/app/app  
+    networks:
+      - faq_network
+
+
+  init:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: semantic_faq_init
+    command: python init_db.py
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - init  
+    volumes:
+      - ./init_db.py:/app/init_db.py
+    networks:
+      - faq_network
+
+  
 volumes:
-  pgvector_data:
+  postgres_data:
     driver: local
+  redis_data:
+    driver: local
+  celery_beat_data:
+    driver: local
+
+networks:
+  faq_network:
+    driver: bridge

@@ -1,6 +1,12 @@
-langchain
-langchain-openai
-fastapi
-uvicorn
-celery
+psycopg2-binary
+pgvector
 sqlalchemy
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+redis
+celery
+openai
+langchain-openai
+langchain

@@ -3,8 +3,8 @@ import numpy as np
 from typing import List, Optional
 from langchain_openai import OpenAIEmbeddings
 from sqlalchemy.orm import Session
-from app.models.database import FAQEntry, get_db
-from app.core.config import settings
+from app.models.db import FAQEntry
+from app.core.settings import settings
 from app.core.celery_app import celery_app
 import logging
 from app.models.db import SessionLocal
@@ -50,11 +50,8 @@ def compute_embeddings_for_collection(collection: str = "default"):
         
         embedding_service = EmbeddingService()
         questions = [entry.question for entry in entries]
-        
-        # Compute embeddings synchronously in the celery worker
+   
         embeddings = asyncio.run(embedding_service.compute_embeddings_batch(questions))
-        
-        # Update entries with embeddings
         for entry, embedding in zip(entries, embeddings):
             entry.embedding = embedding
         

@@ -2,9 +2,9 @@ import numpy as np
 from typing import List, Tuple, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from app.models.database import FAQEntry
-from app.services.embedding_service import EmbeddingService
-from app.core.config import settings
+from app.models.db import FAQEntry
+from app.services.embeddings_service import EmbeddingService
+from app.core.settings import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class SimilarityService:
         user_question: str, 
         db: Session, 
         collection: str = "default",
-        limit: int = 5
+        limit: int = 1
     ) -> Optional[Tuple[FAQEntry, float]]:
 
         try:
