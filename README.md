@@ -119,20 +119,6 @@ Content-Type: application/json
   "similarity_score": 0.95
 }
 ```
-
-#### Compute Embeddings
-```http
-POST /api/v1/embeddings?collection=default
-```
-
-**Response:**
-```json
-{
-  "message": "Embedding computation started for collection: default",
-  "task_id": "abc123-def456-ghi789"
-}
-```
-
 ## 🏗️ Project Structure
 
 ```
