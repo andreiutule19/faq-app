@@ -35,7 +35,7 @@ A sophisticated FAQ system that combines semantic search with AI-powered respons
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/andreiutule19/faq-app.git
 cd faq-api
 ```
 
