@@ -15,6 +15,9 @@ class OpenAIService:
         )
         
     async def get_answer(self, user_question: str, context: Optional[str] = None) -> str:
+        
+        if not user_question or user_question.strip() == "":
+            return "Please provide a valid question."
         try:
             system_message = SystemMessage(content="""
             You are a helpful IT support assistant. Answer user questions about account management, 

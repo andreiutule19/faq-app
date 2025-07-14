@@ -75,6 +75,7 @@ async def ask_question(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error"
         )
+        
 @router.post("/embeddings")
 async def compute_embeddings(
     collection: str = "default",
@@ -88,6 +89,7 @@ async def compute_embeddings(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error starting embedding computation"
         )
+
 
 @router.post("/faq-entries", response_model=FAQEntryResponse)
 async def create_faq_entry(

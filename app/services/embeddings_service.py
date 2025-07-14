@@ -64,6 +64,33 @@ class EmbeddingService:
                 raise
         
         return embeddings
+
+    
+    async def _compute_embeddings_batch_request(self, texts: List[str], total_estimated_tokens: int) -> List[List[float]]:
+ 
+        try:
+  
+            await openai_rate_limiter.acquire(total_estimated_tokens)
+            embeddings = await self.embeddings.aembed_documents(texts)
+            
+            if len(embeddings) != len(texts):
+                raise ValueError(f"Embedding count mismatch: expected {len(texts)}, got {len(embeddings)}")
+         
+            logger.info(f"Successfully computed {len(embeddings)} embeddings in batch request")
+            
+            return embeddings
+            
+        except openai.RateLimitError as e:
+            logger.warning(f"Rate limit exceeded in batch request: {e}")
+            status = openai_rate_limiter.get_status()
+            logger.debug(f"Rate limit status: RPM {status['rpm']['current']}/{status['rpm']['limit']}, "
+                        f"TPM {status['tpm']['current']}/{status['tpm']['limit']}")
+            raise
+
+        except Exception as e:
+            logger.error(f"Unexpected error in batch request: {e}")
+            logger.debug(f"Batch details: {len(texts)} texts, {total_estimated_tokens} estimated tokens")
+            raise
     
     async def compute_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
         if not texts:
