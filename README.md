@@ -187,5 +187,5 @@ The system uses GPT-4o-mini with a specialized system prompt for IT support:
 For questions, please:
 - Open an issue on GitHub
 - Check the API documentation at `Documentation.pdf`
-- Review the test collection within documentationfor usage examples
+- Review the test collection within documentationCfor usage examples
 
